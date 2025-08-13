@@ -18,3 +18,5 @@ To make it work correctly, follow the steps below:
    - Insert your **API Key** into the script.  
    - Place the `vrs_openaip_layers` folder in a directory of your choice.  
    - Configure it in the plugin options as shown in the image.
+
+73 de PP2LA
