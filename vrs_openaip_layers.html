@@ -1,0 +1,116 @@
+<script type="text/javascript">
+    // Configuração principal do OpenAIP
+    const MAP_CONFIG = {
+        openaip: {
+            apiKey: 'YOUR API KEY',
+            subdomains: ['a', 'b', 'c'],
+            tileUrl: 'https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png',
+            options: {
+                maxZoom: 14,
+                attribution: '© OpenAIP Data - CC BY-NC 4.0',
+                opacity: 0.8,
+                errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+                detectRetina: false
+            }
+        },
+        osm: {
+            tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            options: {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }
+        }
+    };
+
+    // Função para verificar disponibilidade do serviço OpenAIP
+    async function checkServiceAvailability() {
+        try {
+            const testUrl = MAP_CONFIG.openaip.tileUrl
+                .replace('{s}', MAP_CONFIG.openaip.subdomains[0])
+                .replace('{z}/{x}/{y}', '6/32/22') +
+                `?apiKey=${MAP_CONFIG.openaip.apiKey}`;
+
+            const response = await fetch(testUrl, {
+                method: 'HEAD',
+                cache: 'no-store'
+            });
+            return response.ok;
+        } catch (e) {
+            console.warn('Serviço OpenAIP indisponível:', e);
+            return false;
+        }
+    }
+
+    // Inicialização no Virtual Radar Server
+    if (VRS && VRS.globalDispatch) {
+        VRS.globalDispatch.hook(VRS.globalEvent.bootstrapCreated, async function (bootStrap) {
+            if (bootStrap.hookMapInitialised) {
+                bootStrap.hookMapInitialised(async function (pageSettings) {
+                    if (pageSettings.mapPlugin) {
+                        const map = pageSettings.mapPlugin.getNative();
+
+                        // Camada combinada OpenAIP
+                        const openaipLayer = L.tileLayer(
+                            MAP_CONFIG.openaip.tileUrl + `?apiKey=${MAP_CONFIG.openaip.apiKey}`,
+                            {
+                                ...MAP_CONFIG.openaip.options,
+                                subdomains: MAP_CONFIG.openaip.subdomains
+                            }
+                        );
+
+                        // Camada OSM (fallback)
+                        const osmLayer = L.tileLayer(
+                            MAP_CONFIG.osm.tileUrl,
+                            MAP_CONFIG.osm.options
+                        );
+
+                        // Verifica disponibilidade do OpenAIP
+                        const openaipAvailable = await checkServiceAvailability();
+
+                        // Configuração das camadas de base
+                        const baseLayers = {
+                            'OpenStreetMap': osmLayer
+                        };
+
+                        if (openaipAvailable) {
+                            baseLayers['OpenAIP (Camada Combinada)'] = openaipLayer;
+                        }
+
+                        // Controle de camadas
+                        const layerControl = L.control.layers(baseLayers, {}, {
+                            position: 'topright',
+                            collapsed: false
+                        }).addTo(map);
+
+                        // Adiciona camadas padrão
+                        osmLayer.addTo(map);
+
+                        if (openaipAvailable) {
+                            openaipLayer.addTo(map);
+                        }
+
+                        // Tratamento de erro no carregamento dos tiles
+                        openaipLayer.on('tileerror', function (e) {
+                            console.warn(`Erro ao carregar tile OpenAIP:`, e);
+                            openaipLayer.setOpacity(openaipLayer.options.opacity * 0.3);
+                        });
+
+                        openaipLayer.on('tileload', function () {
+                            openaipLayer.setOpacity(openaipLayer.options.opacity);
+                        });
+
+                        // Ajuste dinâmico de opacidade conforme zoom
+                        map.on('zoomend', function () {
+                            const currentZoom = map.getZoom();
+                            if (currentZoom > 14) {
+                                openaipLayer.setOpacity(0.3);
+                            } else {
+                                openaipLayer.setOpacity(openaipLayer.options.opacity);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+</script>
