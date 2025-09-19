@@ -2,7 +2,7 @@
     // Configuração principal do OpenAIP
     const MAP_CONFIG = {
         openaip: {
-            apiKey: 'YOUR API KEY',
+            apiKey: 'YOU KEY',
             subdomains: ['a', 'b', 'c'],
             tileUrl: 'https://{s}.api.tiles.openaip.net/api/data/openaip/{z}/{x}/{y}.png',
             options: {
@@ -58,6 +58,11 @@
                             }
                         );
 
+                        // Escurece os tiles inicialmente
+                        openaipLayer.on('tileload', function (event) {
+                            event.tile.style.filter = 'brightness(70%) contrast(110%)';
+                        });
+
                         // Camada OSM (fallback)
                         const osmLayer = L.tileLayer(
                             MAP_CONFIG.osm.tileUrl,
@@ -77,17 +82,14 @@
                         }
 
                         // Controle de camadas
-                        const layerControl = L.control.layers(baseLayers, {}, {
+                        L.control.layers(baseLayers, {}, {
                             position: 'topright',
                             collapsed: false
                         }).addTo(map);
 
                         // Adiciona camadas padrão
                         osmLayer.addTo(map);
-
-                        if (openaipAvailable) {
-                            openaipLayer.addTo(map);
-                        }
+                        if (openaipAvailable) openaipLayer.addTo(map);
 
                         // Tratamento de erro no carregamento dos tiles
                         openaipLayer.on('tileerror', function (e) {
@@ -102,12 +104,49 @@
                         // Ajuste dinâmico de opacidade conforme zoom
                         map.on('zoomend', function () {
                             const currentZoom = map.getZoom();
-                            if (currentZoom > 14) {
+                            if (currentZoom >= 14) {
                                 openaipLayer.setOpacity(0.3);
                             } else {
                                 openaipLayer.setOpacity(openaipLayer.options.opacity);
                             }
                         });
+
+                        // === Controle customizado de contraste ===
+                        if (openaipAvailable) {
+                            const ContrastControl = L.Control.extend({
+                                options: { position: 'topright' },
+                                onAdd: function () {
+                                    const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                                    container.style.background = '#fff';
+                                    container.style.padding = '5px';
+                                    container.style.width = '140px';
+                                    container.style.fontSize = '12px';
+
+                                    container.innerHTML = `
+                                        <label>Contraste</label><br>
+                                        <input id="contrastRange" type="range" min="50" max="150" value="100" step="5" style="width:100%">
+                                    `;
+
+                                    // Impede que o slider mexa no mapa ao arrastar
+                                    L.DomEvent.disableClickPropagation(container);
+
+                                    container.querySelector('#contrastRange').addEventListener('input', function (e) {
+                                        const value = e.target.value;
+                                        const brightness = 100 - (value - 100) * 0.3; 
+                                        const contrast = value;
+                                        document.querySelectorAll("img.leaflet-tile").forEach(tile => {
+                                            if (tile.src.includes("openaip")) {
+                                                tile.style.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+                                            }
+                                        });
+                                    });
+
+                                    return container;
+                                }
+                            });
+
+                            map.addControl(new ContrastControl());
+                        }
                     }
                 });
             }
