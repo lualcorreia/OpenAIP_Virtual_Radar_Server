@@ -19,4 +19,15 @@ To make it work correctly, follow the steps below:
    - Place the `vrs_openaip_layers` folder in a directory of your choice.  
    - Configure it in the plugin options as shown in the image.
 
-73 de PP2LA
+---
+
+## V1.2 – Changes & Improvements
+
+- Added **darkening and contrast adjustment** to the OpenAIP layer, making it easier to read over the OpenStreetMap background.  
+- Implemented a **custom Leaflet control** with a **slider** that allows you to dynamically adjust brightness and contrast of the OpenAIP layer while the map is running.  
+- Improved error handling: if OpenAIP tiles fail, the opacity is reduced to signal issues instead of leaving the map blank.  
+- Minor refinements in zoom-based opacity control (better visual balance when zooming in beyond level 14).  
+
+---
+
+73 de **PP2LA**
