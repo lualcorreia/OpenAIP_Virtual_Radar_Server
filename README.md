@@ -21,12 +21,23 @@ To make it work correctly, follow the steps below:
 
 ---
 
-## V1.2 – Changes & Improvements
+## 📌 Changelog
 
-- Added **darkening and contrast adjustment** to the OpenAIP layer, making it easier to read over the OpenStreetMap background.  
-- Implemented a **custom Leaflet control** with a **slider** that allows you to dynamically adjust brightness and contrast of the OpenAIP layer while the map is running.  
-- Improved error handling: if OpenAIP tiles fail, the opacity is reduced to signal issues instead of leaving the map blank.  
-- Minor refinements in zoom-based opacity control (better visual balance when zooming in beyond level 14).  
+### V1.0 – Initial Release
+- Basic integration of **OpenAIP tiles** into Virtual Radar Server (VRS).  
+- Added fallback to **OpenStreetMap** if OpenAIP service was unavailable.  
+- Included attribution, max zoom, and default opacity settings.  
+
+### V1.1 – Service Check & Error Handling
+- Implemented **service availability check** before loading OpenAIP tiles.  
+- Added **error handling for failed tiles**, with automatic opacity reduction.  
+- Improved **zoom-based opacity control**, reducing opacity at high zoom levels for clarity.  
+
+### V1.2 – Contrast Control & UI Improvements
+- Added **darkening and contrast adjustment** to the OpenAIP layer, making it easier to visualize over OpenStreetMap.  
+- Implemented a **Leaflet control slider** to dynamically adjust brightness/contrast in real time.  
+- Enhanced error handling to avoid blank tiles.  
+- Minor refinements in zoom/opacity balance for better readability.  
 
 ---
 
